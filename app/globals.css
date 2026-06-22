@@ -1,0 +1,40 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 디자인 토큰 (설계서 4-3 컬러표) */
+:root {
+  --bg: #FFFBF6;           /* 따뜻한 아이보리 배경 */
+  --surface: #FFFFFF;      /* 카드 */
+  --primary: #F2A285;      /* 부드러운 살구/코랄 (주색) */
+  --primary-deep: #E08763; /* 버튼 hover/강조 */
+  --accent: #8FB3A4;       /* 세이지 그린 (균형·범용 악센트) */
+  --text: #4A3F39;         /* 따뜻한 다크 브라운 */
+  --text-muted: #9B8E86;   /* 보조 텍스트 */
+  --tag-bg: #FDEFE7;       /* 태그/칩 배경 */
+  --border: #F0E6DD;       /* 경계선 */
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+      'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
+      'Malgun Gothic', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    color: var(--text-muted);
+  }
+}
