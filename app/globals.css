@@ -15,6 +15,7 @@
   --text-muted: #9B8E86;   /* 보조 텍스트 */
   --tag-bg: #FDEFE7;       /* 태그/칩 배경 */
   --border: #F0E6DD;       /* 경계선 */
+  --card-bg: #FFFFFF;      /* 내부 섹션 카드 배경 (--surface 동일값) */
 }
 
 @layer base {
