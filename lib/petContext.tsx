@@ -1,34 +1,83 @@
 'use client';
 
 /**
- * lib/petContext.tsx — 임시 골격 (FEAT-01)
+ * lib/petContext.tsx — usePet 실구현 (FEAT-03)
  *
- * ★ 이 파일은 FEAT-01의 임시 골격입니다.
- * - PetProvider: children을 그대로 통과시키는 최소 Provider
- * - usePet(): 빌드/타입 통과용 최소 형태 (빈 객체 반환)
- *
- * FEAT-03에서 실제 usePet 시그니처로 "교체"합니다:
+ * FEAT-01 임시 골격을 실제 구현으로 교체.
+ * 확정 시그니처:
  *   usePet(): { pet?: Pet; loading: boolean; refresh: () => Promise<void> }
  *
- * 주의: 이 임시 형태에 의존하는 화면 로직을 작성하지 마세요.
- * 후속 FEAT-04/06/07/08/09는 FEAT-03 이후 확정 시그니처를 기준으로 구현합니다.
+ * 후속 FEAT-04/06/07/08/09는 이 시그니처를 기준으로 구현한다.
  */
 
-import { createContext, useContext, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+import { petRepo } from './repos';
+import type { Pet } from './types';
 
-// 임시 컨텍스트 타입 — FEAT-03에서 교체됨
-type PetContextType = Record<string, never>;
+// ────────────────────────────────────────────────
+// 컨텍스트 타입 — FEAT-03 확정 시그니처
+// ────────────────────────────────────────────────
 
-const PetContext = createContext<PetContextType>({});
-
-/** 임시 PetProvider — children을 그대로 통과 (FEAT-03에서 실구현으로 교체) */
-export function PetProvider({ children }: { children: ReactNode }): JSX.Element {
-  return <PetContext.Provider value={{}}>{children}</PetContext.Provider>;
+interface PetContextType {
+  /** 현재 activePet. petRepo.getActive() 결과. 없으면 undefined. */
+  pet?: Pet;
+  /** 최초 로딩/refresh 진행 여부 */
+  loading: boolean;
+  /** petRepo.getActive() 재조회로 pet 갱신 (프로필 등록·수정 직후 호출) */
+  refresh: () => Promise<void>;
 }
 
+const PetContext = createContext<PetContextType>({
+  pet: undefined,
+  loading: true,
+  refresh: async () => {},
+});
+
+// ────────────────────────────────────────────────
+// PetProvider
+// ────────────────────────────────────────────────
+
+/** 마운트 시 petRepo.getActive()로 activePet 로딩. refresh로 재로딩 가능. */
+export function PetProvider({ children }: { children: ReactNode }): JSX.Element {
+  const [pet, setPet] = useState<Pet | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const activePet = await petRepo.getActive();
+      setPet(activePet);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return (
+    <PetContext.Provider value={{ pet, loading, refresh }}>
+      {children}
+    </PetContext.Provider>
+  );
+}
+
+// ────────────────────────────────────────────────
+// usePet 훅 — 확정 시그니처
+// ────────────────────────────────────────────────
+
 /**
- * 임시 usePet 훅 — 빌드 통과용 최소 형태
- * FEAT-03에서 { pet?: Pet; loading: boolean; refresh: () => Promise<void> }로 교체됩니다.
+ * 현재 activePet과 로딩 상태, refresh 함수를 반환한다.
+ *
+ * @returns { pet?: Pet; loading: boolean; refresh: () => Promise<void> }
  */
 export function usePet(): PetContextType {
   return useContext(PetContext);
