@@ -1,8 +1,9 @@
 /**
- * lib/aiClient.ts — AI 클라이언트 fetch 래퍼 (FEAT-06 · FEAT-07)
+ * lib/aiClient.ts — AI 클라이언트 fetch 래퍼 (FEAT-06 · FEAT-07 · FEAT-12)
  *
- * requestSummary: POST /api/ai/summary
- * requestAsk:     POST /api/ai/ask
+ * requestSummary:  POST /api/ai/summary
+ * requestAsk:      POST /api/ai/ask
+ * requestRainbow:  POST /api/ai/rainbow  (FEAT-12)
  *
  * ★ 보정 지시 4: pet.profile_image(Blob), entry.photos(Blob[]) 절대 포함 금지.
  *   텍스트/상태 필드만 명시적으로 매핑해 전송.
@@ -134,6 +135,75 @@ export async function requestAsk(
     const text = await res.text().catch(() => '');
     throw new Error(
       `AI 질문 요청 실패 (${res.status}): ${text || res.statusText}`,
+    );
+  }
+
+  return res.json() as Promise<{ answer: string }>;
+}
+
+// ────────────────────────────────────────────────
+// requestRainbow (FEAT-12)
+// ────────────────────────────────────────────────
+
+/**
+ * 무지개연결 회고 응답을 요청한다.
+ *
+ * - pet 직렬화: profile_image(Blob) 제외, 텍스트 필드만 전송 (보정 지시 R3).
+ * - records 직렬화: photos(Blob[]) 제외,
+ *     { date, mood_tags, diary_text(원본·절단은 호출측), condition, photoCount }
+ *   로 매핑해 전송 (보정 지시 R3).
+ * - 컨텍스트 샘플링(records 20개 초과 분산 추출)은 호출측 FEAT-14 책임.
+ *   이 함수는 받은 records를 그대로 직렬화해 전송한다.
+ * - 서버 오류(4xx/5xx)·네트워크 오류는 Error를 throw한다. 호출자가 try/catch로 처리.
+ */
+export async function requestRainbow(
+  pet: Pet,
+  intent: 'intro' | 'chat',
+  question: string | undefined,
+  records: DiaryEntry[],
+  history?: { q: string; a: string }[],
+): Promise<{ answer: string }> {
+  // ── Blob 제외 pet 페이로드 ──────────────────────────
+  // profile_image(Blob) 명시적으로 미포함 (보정 지시 R3)
+  const petPayload = {
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed,
+    age: pet.age,
+    gender: pet.gender,
+    personality: pet.personality,
+    likes: pet.likes,
+    dislikes: pet.dislikes,
+    health_notes: pet.health_notes,
+  };
+
+  // ── Blob 제외 records 페이로드 ───────────────────────
+  // photos(Blob[]) 명시적으로 미포함.
+  // photoCount만 숫자로 추출해 기록 여부를 전달 (보정 지시 R3).
+  const recordsPayload = records.map((r) => ({
+    date: r.date,
+    mood_tags: r.mood_tags,
+    diary_text: r.diary_text,
+    condition: r.ai_summary?.condition,
+    photoCount: r.photos?.length ?? 0,
+  }));
+
+  const res = await fetch('/api/ai/rainbow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pet: petPayload,
+      intent,
+      question,
+      records: recordsPayload,
+      history,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      `AI 무지개연결 요청 실패 (${res.status}): ${text || res.statusText}`,
     );
   }
 
