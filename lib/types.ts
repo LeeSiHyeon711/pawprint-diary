@@ -74,6 +74,7 @@ export interface AIConversation {
   user_question: string;
   ai_response: string;
   timestamp: string; // ISO 문자열
+  mode?: 'ask' | 'rainbow'; // ★ FEAT-10: 대화 출처 구분 (미지정 시 'ask'로 간주)
 }
 
 export interface MetaRecord {

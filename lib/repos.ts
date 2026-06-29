@@ -64,6 +64,32 @@ export const metaRepo = {
 };
 
 // ────────────────────────────────────────────────
+// rainbowRepo (FEAT-10) — metaRepo 얇은 래퍼
+// ────────────────────────────────────────────────
+
+/**
+ * 무지개연결 모드 활성화 플래그를 meta 스토어로 관리한다.
+ * 사용 키: 'rainbowMode' ('on' | 'off'), 'rainbowActivatedAt' (ISO 문자열)
+ */
+export const rainbowRepo = {
+  /** 무지개연결 모드가 켜져 있으면 true. rainbowMode 키가 없으면 false (에러 아님). */
+  async isOn(): Promise<boolean> {
+    return (await metaRepo.get('rainbowMode')) === 'on';
+  },
+
+  /** 무지개연결 모드를 켠다. 활성화 시각을 rainbowActivatedAt에 기록한다. */
+  async turnOn(): Promise<void> {
+    await metaRepo.set('rainbowMode', 'on');
+    await metaRepo.set('rainbowActivatedAt', new Date().toISOString());
+  },
+
+  /** 무지개연결 모드를 끈다. */
+  async turnOff(): Promise<void> {
+    await metaRepo.set('rainbowMode', 'off');
+  },
+};
+
+// ────────────────────────────────────────────────
 // petRepo
 // ────────────────────────────────────────────────
 
@@ -196,10 +222,25 @@ export const conversationRepo = {
   /**
    * 특정 pet의 모든 AI 대화를 반환.
    * 정렬: timestamp desc (최신 먼저).
+   * mode 미지정 레코드(기존 /ask 대화)도 포함된다.
    */
   async listByPet(pet_id: string): Promise<AIConversation[]> {
     const db = await getDB();
     const conversations = await db.getAllFromIndex('conversations', 'by-pet', pet_id);
     return [...conversations].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  },
+
+  /**
+   * 특정 pet의 무지개연결 대화만 반환 (FEAT-10).
+   * by-pet 인덱스로 조회 후 mode==='rainbow'인 항목만 필터.
+   * 정렬: timestamp desc.
+   * mode 미지정(기존 /ask) 레코드는 제외되어 /ask 대화와 섞이지 않는다.
+   */
+  async listByPetRainbow(pet_id: string): Promise<AIConversation[]> {
+    const db = await getDB();
+    const conversations = await db.getAllFromIndex('conversations', 'by-pet', pet_id);
+    return conversations
+      .filter((c) => c.mode === 'rainbow')
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   },
 };
