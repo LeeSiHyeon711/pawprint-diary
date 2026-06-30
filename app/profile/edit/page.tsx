@@ -16,6 +16,7 @@ import { ProfileForm, type ProfileFormValues } from '@/components/ProfileForm';
 import { Spinner } from '@/components/ui/Spinner';
 import { petRepo } from '@/lib/repos';
 import { usePet } from '@/lib/petContext';
+import { RainbowSection } from '@/components/RainbowSection';
 import type { Pet } from '@/lib/types';
 
 export default function ProfileEditPage(): JSX.Element {
@@ -72,6 +73,7 @@ export default function ProfileEditPage(): JSX.Element {
           submitLabel="수정 저장"
           onSubmit={handleSubmit}
         />
+        <RainbowSection />
       </div>
     </div>
   );
